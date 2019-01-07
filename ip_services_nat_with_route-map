@@ -1,0 +1,81 @@
+****with the deny statement******
+
+
+R3>show users
+    Line       User       Host(s)              Idle       Location
+   0 con 0                idle                 00:09:32   
+   1 vty 0                idle                 00:09:19 150.1.2.2
+   2 vty 1                idle                 00:08:57 155.1.2.2
+   3 vty 2                idle                 00:03:55 155.1.23.2
+   4 vty 3                idle                 00:02:32 150.1.2.2
+*  5 vty 4                idle                 00:00:00 155.1.23.200
+
+  Interface    User               Mode         Idle     Peer Address
+
+R3>
+R2#show ip nat translations
+Pro  Inside global         Inside local          Outside local         Outside global
+tcp  155.1.23.2:4096       155.1.2.2:12230       155.1.23.3:23         155.1.23.3:23
+tcp  155.1.23.200:1024     150.1.2.2:35868       155.1.23.3:23         155.1.23.3:23
+Total number of translations: 2
+
+R2#show route-map
+route-map NAT_OUT_PPP_FROM_LOOPBACK, permit, sequence 10
+  Match clauses:
+    ip address (access-lists): FROM_LOOPBACK 
+    interface GigabitEthernet1.23 
+  Set clauses:
+  Policy routing matches: 0 packets, 0 bytes
+route-map NAT_OUT_PPP_GIG2, deny, sequence 10
+  Match clauses:
+    ip address (access-lists): FROM_LOOPBACK 
+    interface GigabitEthernet1.23 
+  Set clauses:
+  Policy routing matches: 0 packets, 0 bytes
+route-map NAT_OUT_PPP_GIG2, permit, sequence 20
+  Match clauses:
+    ip address (access-lists): FROM_G2 
+    interface GigabitEthernet1.23 
+  Set clauses:
+  Policy routing matches: 0 packets, 0 bytes
+
+
+******without the deny statement***************************
+
+R2#telnet 155.1.23.3 /source-interface Loopback 0
+Trying 155.1.23.3 ... Open
+
+R3>
+R2#telnet 155.1.23.3 /source-interface g1.2      
+Trying 155.1.23.3 ... Open
+
+R3>show users
+    Line       User       Host(s)              Idle       Location
+   0 con 0                idle                 01:42:07   
+   1 vty 0                idle                 00:00:43 155.1.23.200
+*  2 vty 1                idle                 00:00:00 155.1.23.2
+
+  Interface    User               Mode         Idle     Peer Address
+
+R3>
+R2#show ip nat tran
+R2#show ip nat translations 
+Pro  Inside global         Inside local          Outside local         Outside global
+tcp  155.1.23.2:4096       155.1.2.2:13964       155.1.23.3:23         155.1.23.3:23
+tcp  155.1.23.200:1024     150.1.2.2:17385       155.1.23.3:23         155.1.23.3:23
+Total number of translations: 2
+
+R2#sh route-map
+route-map NAT_OUT_PPP_FROM_LOOPBACK, permit, sequence 10
+  Match clauses:
+    ip address (access-lists): FROM_LOOPBACK 
+    interface GigabitEthernet1.23 
+  Set clauses:
+  Policy routing matches: 0 packets, 0 bytes
+route-map NAT_OUT_PPP_GIG2, permit, sequence 20
+  Match clauses:
+    ip address (access-lists): FROM_G2 
+    interface GigabitEthernet1.23 
+  Set clauses:
+  Policy routing matches: 0 packets, 0 bytes
+R2#
